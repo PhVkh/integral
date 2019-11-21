@@ -4,12 +4,20 @@ import java.util.Scanner;
 public class Integral {
     static double answer = 0; //в эту переменную будет записано значение интеграла
 	
-	public static void increaseAnswer(double i) {
-		double check = answer;
-		double incremented = answer + i;
-		if (check == answer) {
-			answer = incremented;
-		} else increaseAnswer(i);
+	static int cores; //количество ядер
+ 	
+	static int answerTime = 0;
+	public static void increaseAnswer(int turn, double i) {
+		if (turn == answerTime) {
+			answer += i;
+			++answerTime;
+		} else {
+			try {
+				Thread.sleep(1000);
+			} catch (Exception e) {
+				
+			}
+		}
 	}
 	
 	//наша функция
@@ -48,12 +56,12 @@ public class Integral {
         System.out.println("with accuracy ");
         double accuracy = in.nextDouble();
 		System.out.println("number of threads ");
-        int cores = in.nextInt();
+        cores = in.nextInt();
 		
 		double size = (finish - start) / cores; //длина куска оси х, которую будет интегрировать каждый поток
 		double startForThread = start;
 		for (int i = 0; i < cores; ++i) {
-			Thread partOfIntegral = new Thread(new shortIntegral(startForThread, startForThread + size, accuracy));
+			Thread partOfIntegral = new Thread(new shortIntegral(startForThread, startForThread + size, accuracy, i));
 			startForThread += size;
 			partOfIntegral.start();
 			try {
@@ -69,14 +77,15 @@ class shortIntegral implements Runnable {
     private double s;
 	private double f;
 	private double a;
-    
-    public shortIntegral(double s, double f, double a) {
+    private int turn;
+	
+    public shortIntegral(double s, double f, double a, int t) {
         this.s = s;
         this.f = f;
 		this.a = a;
 	}
 
     public void run() {
-		Integral.increaseAnswer(Integral.integrateByAccuracy(s, f, a));
+		Integral.increaseAnswer(turn, Integral.integrateByAccuracy(s, f, a));
     }
 }
