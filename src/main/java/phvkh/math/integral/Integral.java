@@ -12,11 +12,7 @@ public class Integral {
 			answer += i;
 			++answerTime;
 		} else {
-			try {
-				Thread.sleep(1000);
-			} catch (Exception e) {
-				
-			}
+			increaseAnswer(turn, i);
 		}
 	}
 	
@@ -83,6 +79,7 @@ class shortIntegral implements Runnable {
         this.s = s;
         this.f = f;
 		this.a = a;
+		this.turn = t;
 	}
 
     public void run() {
