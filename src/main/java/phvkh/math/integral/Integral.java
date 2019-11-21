@@ -1,10 +1,11 @@
 import java.lang.Math;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.Scanner;
 
 public class Integral {
     static double answer = 0; //в эту переменную будет записано значение интеграла
-	
-	public static synchronized void increaseAnswer(double i) {
+ 	
+	public static void increaseAnswer(double i) {
 		answer += i;
 	}
 	
@@ -46,10 +47,12 @@ public class Integral {
 		System.out.println("number of threads ");
         int cores = in.nextInt();
 		
+		
 		double size = (finish - start) / cores; //длина куска оси х, которую будет интегрировать каждый поток
 		double startForThread = start;
+		ReentrantLock locker = new ReentrantLock();
 		for (int i = 0; i < cores; ++i) {
-			Thread partOfIntegral = new Thread(new shortIntegral(startForThread, startForThread + size, accuracy));
+			Thread partOfIntegral = new Thread(new shortIntegral(startForThread, startForThread + size, accuracy, locker));
 			startForThread += size;
 			partOfIntegral.start();
 			try {
@@ -65,14 +68,19 @@ class shortIntegral implements Runnable {
     private double s;
 	private double f;
 	private double a;
-    
-    public shortIntegral(double s, double f, double a) {
+	
+	ReentrantLock locker;
+	
+    public shortIntegral(double s, double f, double a, ReentrantLock locker) {
         this.s = s;
         this.f = f;
 		this.a = a;
+		this.locker = locker;
 	}
 
     public void run() {
+		locker.lock();
 		Integral.increaseAnswer(Integral.integrateByAccuracy(s, f, a));
+		locker.unlock();
     }
 }
