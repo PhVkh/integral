@@ -1,4 +1,5 @@
 import java.lang.Math;
+import java.util.concurrent.atomic;
 import java.util.Scanner;
 
 public class Integral {
