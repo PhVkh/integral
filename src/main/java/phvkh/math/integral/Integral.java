@@ -4,8 +4,12 @@ import java.util.Scanner;
 public class Integral {
     static double answer = 0; //в эту переменную будет записано значение интеграла
 	
-	public static synchronized void increaseAnswer(double i) {
-		answer += i;
+	public static void increaseAnswer(double i) {
+		double check = answer;
+		double incremented = answer + i;
+		if (check == answer) {
+			answer = incremented;
+		} else increaseAnswer(i);
 	}
 	
 	//наша функция
