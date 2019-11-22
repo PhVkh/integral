@@ -5,14 +5,6 @@ import java.util.Scanner;
 public class Integral {
     static AtomicFloat answer = new AtomicFloat(); //в эту переменную будет записано значение интеграла
 	
-	public static void increaseAnswer(float f) {
-		float expected = answer.get();
-		float update = expected + f;
-		if (!answer.compareAndSet(expected, update)) {
-			increaseAnswer(f);
-		}
-	}
-	
 	//наша функция
 	public static float func(float x) {
         return x*x;
@@ -78,6 +70,6 @@ class shortIntegral implements Runnable {
 	}
 
     public void run() {
-		Integral.increaseAnswer(Integral.integrateByAccuracy(s, f, a));
+		Integral.answer.addAndGet(Integral.integrateByAccuracy(s, f, a));
     }
 }
