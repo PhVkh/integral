@@ -2,19 +2,8 @@ import java.lang.Math;
 import java.util.Scanner;
 
 public class Integral {
-    static double answer = 0; //в эту переменную будет записано значение интеграла
-	
+	public static double answer;
 	static int cores; //количество ядер
- 	
-	static int answerTime = 0;
-	public static void increaseAnswer(int turn, double i) {
-		if (turn == answerTime) {
-			answer += i;
-			++answerTime;
-		} else {
-			increaseAnswer(turn, i);
-		}
-	}
 	
 	//наша функция
 	public static double func(double x) {
@@ -32,14 +21,33 @@ public class Integral {
     }
     
     //интегрируем func от start до finish, разбивая на такое количество кусков, что accuracy больше разности integrateByPiecies для n и  n+1 кусков
-    public static double integrateByAccuracy(double start, double finish, double accuracy) {
-        double delta = 0;
-        int piecies = 1;
-        do {
-            delta = Math.abs(integrateByPiecies(start, finish, piecies) - integrateByPiecies(start, finish, piecies + 1));
-            ++piecies;
-        } while (delta > accuracy);
-        return integrateByPiecies(start, finish, piecies);
+    public static void integrateByAccuracy(double start, double finish, double accuracy, int cores) {
+        if (cores == 1) {
+			double delta = 0;
+            int piecies = 1;
+            do {
+                delta = Math.abs(integrateByPiecies(start, finish, piecies) - integrateByPiecies(start, finish, piecies + 1));
+                ++piecies;
+            } while (delta > accuracy);
+			answer += integrateByPiecies(start, finish, piecies);
+		} else { //если ядер несколько - разделим работу
+            double f = start + (finish - start) / cores;
+			Thread rightPart = new Thread(new shortIntegral(f, finish, accuracy, cores));
+			rightPart.start();
+	    	double delta = 0;
+            int piecies = 1;
+            do {
+                delta = Math.abs(integrateByPiecies(start, finish, piecies) - integrateByPiecies(start, finish, piecies + 1));
+                ++piecies;
+            } while (delta > accuracy);
+    		double leftPart = integrateByPiecies(start, f, piecies);
+			try {
+				rightPart.join();
+			} catch (Exception e) {
+				
+			}
+			answer += leftPart;			
+		}
     }
 	
     public static void main(String[] args) {
@@ -56,33 +64,26 @@ public class Integral {
 		
 		double size = (finish - start) / cores; //длина куска оси х, которую будет интегрировать каждый поток
 		double startForThread = start;
-		for (int i = 0; i < cores; ++i) {
-			Thread partOfIntegral = new Thread(new shortIntegral(startForThread, startForThread + size, accuracy, i));
-			startForThread += size;
-			partOfIntegral.start();
-			try {
-				partOfIntegral.join();
-			} catch (Exception e) {
-			}
-		}
+		
+		integrateByAccuracy(start, finish, accuracy, cores);
         System.out.println("Result: " + answer);
     }
 }
 
 class shortIntegral implements Runnable {
-    private double s;
-	private double f;
-	private double a;
-    private int turn;
+    private double start;
+	private double finish;
+	private double accuracy;
+	private int cores;
 	
-    public shortIntegral(double s, double f, double a, int t) {
-        this.s = s;
-        this.f = f;
-		this.a = a;
-		this.turn = t;
+    public shortIntegral(double s, double f, double a, int c) {
+        this.start = s;
+        this.finish = f;
+		this.accuracy = a;
+		this.cores = c;
 	}
 
     public void run() {
-		Integral.increaseAnswer(turn, Integral.integrateByAccuracy(s, f, a));
+		Integral.integrateByAccuracy(start, finish, accuracy, cores - 1);
     }
 }
