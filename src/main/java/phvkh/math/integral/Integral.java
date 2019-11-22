@@ -4,10 +4,6 @@ import java.util.Scanner;
 public class Integral {
     static double answer = 0; //в эту переменную будет записано значение интеграла
 	
-	public static synchronized void increaseAnswer(double i) {
-		answer += i;
-	}
-	
 	//наша функция
 	public static double func(double x) {
         return Math.pow(x, 2);
@@ -48,15 +44,22 @@ public class Integral {
 		
 		double size = (finish - start) / cores; //длина куска оси х, которую будет интегрировать каждый поток
 		double startForThread = start;
+		shortIntegral[] parts = new shortIntegral[cores];
 		for (int i = 0; i < cores; ++i) {
-			Thread partOfIntegral = new Thread(new shortIntegral(startForThread, startForThread + size, accuracy));
+			parts[i] = new shortIntegral(startForThread, startForThread + size, accuracy);
+			Thread partOfIntegral = new Thread(parts[i], "i.toString()");
 			startForThread += size;
 			partOfIntegral.start();
-			try {
-				partOfIntegral.join();
-			} catch (Exception e) {
-			}
 		}
+		//усыпим наш главный поток, пока остальные работают
+		try {
+	    	while (Thread.activeCount() > 1) {
+		    	Thread.sleep(250);
+		    }
+		} catch (InterruptedException e) {}
+		for (int i = 0; i < cores; ++i) {
+			answer += parts[i].getResult();
+		} 
         System.out.println("Result: " + answer);
     }
 }
@@ -65,6 +68,7 @@ class shortIntegral implements Runnable {
     private double s;
 	private double f;
 	private double a;
+	private double result;
     
     public shortIntegral(double s, double f, double a) {
         this.s = s;
@@ -73,6 +77,10 @@ class shortIntegral implements Runnable {
 	}
 
     public void run() {
-		Integral.increaseAnswer(Integral.integrateByAccuracy(s, f, a));
+		result = Integral.integrateByAccuracy(s, f, a);
     }
+	
+	public double getResult() {
+		return result;
+	}
 }
