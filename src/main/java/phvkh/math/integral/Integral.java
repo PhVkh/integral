@@ -1,32 +1,36 @@
+import edu.mines.jtk.util.AtomicFloat;
 import java.lang.Math;
-import java.util.concurrent.atomic;
 import java.util.Scanner;
 
 public class Integral {
-    static double answer = 0; //в эту переменную будет записано значение интеграла
+    static AtomicFloat answer = new AtomicFloat(); //в эту переменную будет записано значение интеграла
 	
-	public static synchronized void increaseAnswer(double i) {
-		answer += i;
+	public static void increaseAnswer(float f) {
+		float expected = answer.get();
+		float update = expected + f;
+		if (!answer.compareAndSet(expected, update)) {
+			increaseAnswer(f);
+		}
 	}
 	
 	//наша функция
-	public static double func(double x) {
-        return Math.pow(x, 2);
+	public static float func(float x) {
+        return x*x;
     }
     
     //интегрируем func от start до finish, разбивая на piecies частей
-    public static double integrateByPiecies(double start, double finish, int piecies) {
-        double result = 0;
-        double step = (finish - start) / piecies;   
-        for (double i = start; i <= finish; i += step) {
+    public static float integrateByPiecies(float start, float finish, int piecies) {
+        float result = 0;
+        float step = (finish - start) / piecies;   
+        for (float i = start; i <= finish; i += step) {
             result += func(i) * step;
         }
         return result;
     }
     
     //интегрируем func от start до finish, разбивая на такое количество кусков, что accuracy больше разности integrateByPiecies для n и  n+1 кусков
-    public static double integrateByAccuracy(double start, double finish, double accuracy) {
-        double delta = 0;
+    public static float integrateByAccuracy(float start, float finish, float accuracy) {
+        float delta = 0;
         int piecies = 1;
         do {
             delta = Math.abs(integrateByPiecies(start, finish, piecies) - integrateByPiecies(start, finish, piecies + 1));
@@ -39,16 +43,16 @@ public class Integral {
         Scanner in = new Scanner(System.in);
         
         System.out.println("Integrate from ");
-        double start = in.nextDouble();
+        float start = in.nextFloat();
         System.out.println("to ");
-        double finish = in.nextDouble();
+        float finish = in.nextFloat();
         System.out.println("with accuracy ");
-        double accuracy = in.nextDouble();
+        float accuracy = in.nextFloat();
 		System.out.println("number of threads ");
         int cores = in.nextInt();
 		
-		double size = (finish - start) / cores; //длина куска оси х, которую будет интегрировать каждый поток
-		double startForThread = start;
+		float size = (finish - start) / cores; //длина куска оси х, которую будет интегрировать каждый поток
+		float startForThread = start;
 		for (int i = 0; i < cores; ++i) {
 			Thread partOfIntegral = new Thread(new shortIntegral(startForThread, startForThread + size, accuracy));
 			startForThread += size;
@@ -63,11 +67,11 @@ public class Integral {
 }
 
 class shortIntegral implements Runnable {
-    private double s;
-	private double f;
-	private double a;
+    private float s;
+	private float f;
+	private float a;
     
-    public shortIntegral(double s, double f, double a) {
+    public shortIntegral(float s, float f, float a) {
         this.s = s;
         this.f = f;
 		this.a = a;
